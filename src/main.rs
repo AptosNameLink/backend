@@ -9,7 +9,7 @@ mod routes;
 #[macro_use]
 extern crate json;
 
-use crate::routes::aptos::aptos_random_value;
+use crate::routes::aptos::{aptos_random_value, query_signatures, verify_signatures};
 use crate::routes::health::{evmos_health, osmosis_health, polygon_health};
 use crate::routes::query::{query_balance, track_messages};
 
@@ -35,6 +35,8 @@ async fn main() -> std::io::Result<()> {
             .service(track_messages);
         let hackathon_controller = web::scope("/aptos")
             .app_data(Data::new(reqwest::Client::new()))
+            .service(verify_signatures)
+            .service(query_signatures)
             .service(aptos_random_value);
         App::new()
             .wrap(middleware::Logger::default())
