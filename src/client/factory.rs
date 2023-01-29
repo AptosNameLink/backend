@@ -16,7 +16,6 @@ use std::io::BufReader;
 use std::process::Command;
 use std::process::Output;
 use tokio::task::JoinSet;
-use web3::signing::Key;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct SupportedBlockchain {

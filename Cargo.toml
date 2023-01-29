@@ -23,18 +23,26 @@ tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread", "full"] }
 protobuf = "3.2.0" # This will be needed to use the generated code as protobuf messages
 cosmos-sdk-proto = "0.16.0" # This will be needed to use the generated code as protobuf messages
 ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "main" }
-web3 = "0.18.0"
-jsonrpc-core-client = "18.0.0"
+#web3 = "0.18.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 base64 = "0.21.0"
-ecdsa = "0.15.1"
+ecdsa = "0.13.4"
 ed25519 = "2.1.0"
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "devnet" }
+rand_chacha = "0.3.1"
+rand = "0.7.3"
 
 [build-dependencies]
 tonic-build = "0.8.4"
 #prost-build = "0.11.5"
 #pbjson-build = "0.5.1"
+
+[dependencies.x25519-dalek]
+version = "1.2.0"
+
+[dependencies.zeroize]
+version = "=1.3"
 
 [dev-dependencies]
 protobuf-codegen-pure = "2.14" # Might be different by the time you read this

@@ -3,6 +3,7 @@ use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 
 mod client;
 mod http;
+mod package;
 mod routes;
 
 #[macro_use]
