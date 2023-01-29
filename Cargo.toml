@@ -28,6 +28,8 @@ jsonrpc-core-client = "18.0.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 base64 = "0.21.0"
+ecdsa = "0.15.1"
+ed25519 = "2.1.0"
 
 [build-dependencies]
 tonic-build = "0.8.4"

@@ -13,7 +13,7 @@ use crate::routes::query::{query_balance, track_messages};
 
 async fn index(req: HttpRequest) -> &'static str {
     println!("REQ: {req:?}");
-    "Parachute Drop!"
+    "James Web3!"
 }
 
 #[actix_web::main]
@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/index.html").to(|| async { "Hello world!" }))
             .service(web::resource("/").to(index))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }
