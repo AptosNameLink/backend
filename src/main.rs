@@ -9,6 +9,7 @@ mod routes;
 #[macro_use]
 extern crate json;
 
+use crate::routes::aptos::aptos_random_value;
 use crate::routes::health::{evmos_health, osmosis_health, polygon_health};
 use crate::routes::query::{query_balance, track_messages};
 
@@ -32,10 +33,14 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(reqwest::Client::new()))
             .service(query_balance)
             .service(track_messages);
+        let hackathon_controller = web::scope("/aptos")
+            .app_data(Data::new(reqwest::Client::new()))
+            .service(aptos_random_value);
         App::new()
             .wrap(middleware::Logger::default())
             .service(health_controller)
             .service(query_controller)
+            .service(hackathon_controller)
             .service(web::resource("/index.html").to(|| async { "Hello world!" }))
             .service(web::resource("/").to(index))
     })

@@ -8,6 +8,11 @@ use serde_json::map::Values;
 use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
+pub(crate) struct AptosHackathonRandomResponse {
+    pub(crate) random_value: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub(crate) struct HealthResponse {
     pub(crate) status: u16,
     pub(crate) message: String,
