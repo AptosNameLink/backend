@@ -32,6 +32,8 @@ ed25519 = "2.1.0"
 aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "devnet" }
 rand_chacha = "0.3.1"
 rand = "0.7.3"
+ed25519-dalek = "1.0.1"
+ring = "0.16.20"
 
 [build-dependencies]
 tonic-build = "0.8.4"
