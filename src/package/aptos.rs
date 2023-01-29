@@ -1,8 +1,15 @@
-pub fn verify_signature_by_public_key_ethereum(ethereum_signature: &str, ethereum_address: &str) -> bool {
+pub fn verify_signature_by_public_key_ethereum(
+    ethereum_signature: &str,
+    ethereum_address: &str,
+) -> bool {
     panic!("Not implemented yet")
 }
 
 pub fn verify_signature_by_public_key_aptos(aptos_signature: &str, aptos_address: &str) -> bool {
+    panic!("Not implemented yet")
+}
+
+pub async fn upload_ipfs() -> String {
     panic!("Not implemented yet")
 }
 
