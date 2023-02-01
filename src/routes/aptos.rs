@@ -9,6 +9,7 @@ use crate::http::response::{
 use crate::package::aptos::{store_database, upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::cookie::time::macros::time;
 use ibc_proto::cosmos::bank::v1beta1::{
     query_client::QueryClient, QueryAllBalancesRequest, QueryBalanceRequest, QueryBalanceResponse,
 };
@@ -40,8 +41,21 @@ pub struct SignatureInfo {
     pub(crate) aptos_signature: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SignatureSavedInfo {
+    pub(crate) ethereum_public_key: String, // optional
+    pub(crate) ethereum_address: String,
+    pub(crate) aptos_public_key: String,
+    pub(crate) aptos_address: String,
+    pub(crate) random_value: String,
+    pub(crate) ethereum_signature: String,
+    pub(crate) aptos_signature: String,
+    pub(crate) ipfs_hash: String,
+    pub(crate) timestamp: String,
+}
+
 pub struct SignatureInfoList {
-    pub list: Vec<SignatureInfo>,
+    pub list: Vec<SignatureSavedInfo>,
 }
 
 impl SignatureInfoList {
@@ -49,12 +63,12 @@ impl SignatureInfoList {
         Self { list: Vec::new() }
     }
 
-    pub fn add(&mut self, signature_info: SignatureInfo) {
+    pub fn add(&mut self, signature_info: SignatureSavedInfo) {
         self.list.push(signature_info.clone());
     }
 
-    pub fn find_element_by_aptos_signature(&self, aptos_signature: &str) -> Option<&SignatureInfo> {
-        self.list.iter().find(|&x| x.aptos_signature == aptos_signature)
+    pub fn find_element_by_aptos_address(&self, aptos_address: &str) -> Option<&SignatureSavedInfo> {
+        self.list.iter().find(|&x| x.aptos_address == aptos_address)
     }
 }
 
@@ -97,32 +111,46 @@ pub async fn verify_signatures(
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
         // let database_response = store_database(data, signature_info);
-        // append new element
-        signature_info_list.add(signature_info.clone());
-
         let serialized_data = serde_json::to_string(&signature_info).unwrap();
         let ipfs_response = upload_ipfs(serialized_data).await;
-        match ipfs_response {
-            Ok(response) => {
-                let response = AptosHackathonVerificationResponse {
-                    status: "success".to_string(),
-                    ipfs_hash: response,
-                };
-                Ok(HttpResponse::build(StatusCode::OK).json(response))
-            }
-            Err(e) => {
-                println!("ipfs_response: {:?}", e);
-                let response = AptosHackathonVerificationResponse {
-                    status: "failed".to_string(),
-                    ipfs_hash: "".to_string(),
-                };
-                Ok(HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR).json(response))
-            }
-        }
+        let ipfs_response = ipfs_response.unwrap_or_else(|_| "".to_string());
+
+        let signature_saved_info = SignatureSavedInfo {
+            ethereum_public_key: ethereum_public_key.to_string(),
+            ethereum_address: ethereum_address.to_string(),
+            aptos_public_key: aptos_public_key.to_string(),
+            aptos_address: aptos_address.to_string(),
+            random_value: message.to_string(),
+            ethereum_signature: ethereum_signature.to_string(),
+            aptos_signature: aptos_signature.to_string(),
+            ipfs_hash: ipfs_response,
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .to_string(),
+        };
+        signature_info_list.add(signature_saved_info.clone());
+        Ok(HttpResponse::Ok().json(signature_saved_info))
     } else {
         println!("One of the signatures is invalid");
         // TODO: not adding in the case
-        signature_info_list.add(signature_info.clone());
+        let signature_saved_info = SignatureSavedInfo {
+            ethereum_public_key: ethereum_public_key.to_string(),
+            ethereum_address: ethereum_address.to_string(),
+            aptos_public_key: aptos_public_key.to_string(),
+            aptos_address: aptos_address.to_string(),
+            random_value: message.to_string(),
+            ethereum_signature: ethereum_signature.to_string(),
+            aptos_signature: aptos_signature.to_string(),
+            ipfs_hash: "".to_string(),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .to_string(),
+        };
+        signature_info_list.add(signature_saved_info.clone());
         // let database_response = store_database(data, signature_info);
         // println!("database_response: {:?}", database_response);
         let response = AptosHackathonVerificationResponse {
@@ -137,7 +165,15 @@ pub async fn verify_signatures(
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AptosHackathonQueryResponse {
     pub status: String,
-    pub signature_info: SignatureInfo,
+    pub ethereum_public_key: String,
+    pub ethereum_address: String,
+    pub aptos_public_key: String,
+    pub aptos_address: String,
+    pub random_value: String,
+    pub ethereum_signature: String,
+    pub aptos_signature: String,
+    pub ipfs_hash: String,
+    pub timestamp: String,
 }
 
 #[get("/signature")]
@@ -150,29 +186,35 @@ pub async fn query_signatures(data: web::Data<AppState>, info: web::Query<ChainT
     let signature_info_list = data.signature_info_list.lock().unwrap();
     let response = signature_info_list.list.clone();
     // find by find_element_by_aptos_signature
-    let response = signature_info_list.find_element_by_aptos_signature(aptos_address);
-    match response {
-        Some(response) => {
-            let response = AptosHackathonQueryResponse {
-                status: "success".to_string(),
-                signature_info: response.clone(),
-            };
-            Ok(HttpResponse::build(StatusCode::OK).json(response))
-        }
-        None => {
-            let response = AptosHackathonQueryResponse {
-                status: "failed".to_string(),
-                signature_info: SignatureInfo {
-                    ethereum_public_key: "".to_string(),
-                    ethereum_address: "".to_string(),
-                    aptos_public_key: "".to_string(),
-                    aptos_address: "".to_string(),
-                    message: "".to_string(),
-                    ethereum_signature: "".to_string(),
-                    aptos_signature: "".to_string(),
-                },
-            };
-            Ok(HttpResponse::build(StatusCode::BAD_REQUEST).json(response))
-        }
+    let response = signature_info_list.find_element_by_aptos_address(aptos_address);
+    // if response is None, return failed
+    if !response.is_some() {
+        let response = AptosHackathonQueryResponse {
+            status: "failed".to_string(),
+            ethereum_public_key: "".to_string(),
+            ethereum_address: "".to_string(),
+            aptos_public_key: "".to_string(),
+            aptos_address: "".to_string(),
+            random_value: "".to_string(),
+            ethereum_signature: "".to_string(),
+            aptos_signature: "".to_string(),
+            ipfs_hash: "".to_string(),
+            timestamp: "".to_string(),
+        };
+        return Ok(HttpResponse::build(StatusCode::BAD_REQUEST).json(response));
     }
+    let response = response.unwrap();
+    let response = AptosHackathonQueryResponse {
+        status: "success".to_string(),
+        ethereum_public_key: response.ethereum_public_key.clone(),
+        ethereum_address: response.ethereum_address.clone(),
+        aptos_public_key: response.aptos_public_key.clone(),
+        aptos_address: response.aptos_address.clone(),
+        random_value: response.random_value.clone(),
+        ethereum_signature: response.ethereum_signature.clone(),
+        aptos_signature: response.aptos_signature.clone(),
+        ipfs_hash: response.ipfs_hash.clone(),
+        timestamp: response.timestamp.clone(),
+    };
+    Ok(HttpResponse::build(StatusCode::OK).json(response))
 }
