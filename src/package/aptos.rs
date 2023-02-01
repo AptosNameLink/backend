@@ -1,15 +1,24 @@
+use aptos_sdk::crypto::ed25519::{Ed25519PublicKey, Ed25519Signature};
+use aptos_sdk::crypto::{Signature, ValidCryptoMaterialStringExt};
+use aptos_sdk::types::transaction::TransactionArgument::Address;
+use ed25519_dalek::Signature as DalekSignature;
+
 pub fn verify_signature_by_public_key_ethereum(
     ethereum_signature: &str,
     ethereum_address: &str,
 ) -> bool {
-    panic!("Not implemented yet")
+    // panic!("Not implemented yet")
+    true
 }
 
-pub fn verify_signature_by_public_key_aptos(aptos_signature: &str, aptos_address: &str) -> bool {
-    panic!("Not implemented yet")
+pub fn verify_signature_by_public_key_aptos(message: &str, aptos_signature: &str, aptos_public_key: &str) -> bool {
+    let signature = Ed25519Signature::from_encoded_string(aptos_signature).unwrap();
+    let pubkey = Ed25519PublicKey::from_encoded_string(aptos_public_key).unwrap();
+    let result = signature.verify_arbitrary_msg(message.as_ref(), &pubkey);
+    result.is_ok()
 }
 
-pub async fn upload_ipfs() -> String {
+pub async fn upload_ipfs(data: String) -> String {
     panic!("Not implemented yet")
 }
 
@@ -76,5 +85,31 @@ mod tests {
             Ed25519SignatureTuple::try_from(signature_bytes.as_ref()).unwrap();
         println!("signature to ed25519: {:?}", signature_to_ed25519);
         assert_eq!(signature_to_ed25519, signature);
+    }
+
+    #[test]
+    fn test_verify_signature_by_public_key_aptos() {
+        let message_original = "aptosgazua";
+        let message = message_original.as_bytes();
+
+        let mut rng = rand::thread_rng();
+        let privkey = aptos_sdk::crypto::ed25519::Ed25519PrivateKey::generate(&mut rng);
+        let pubkey = privkey.public_key();
+        println!("pubkey: {:?}", pubkey);
+        let signature = privkey.sign_arbitrary_message(message);
+        println!("signature: {:?}", signature);
+
+        let signature_str = signature.to_string();
+        let pubkey_str = pubkey.to_string();
+
+        // Given
+        let signature = signature_str.clone();
+        let pubkey = pubkey_str.clone();
+
+        // When
+        let result = super::verify_signature_by_public_key_aptos(&signature, &pubkey);
+
+        // Then
+        assert!(result, "Expected the signature to be valid");
     }
 }

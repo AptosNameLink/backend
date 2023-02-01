@@ -40,6 +40,12 @@ pub async fn build_aptos_hackathon_mock_verification_response() -> Result<HttpRe
     Ok(response)
 }
 
+pub async fn build_failed_aptos_hackathon_mock_verification_response(
+) -> Result<HttpResponse, HTTPError> {
+    let response = HttpResponse::build(StatusCode::BAD_REQUEST).finish();
+    Ok(response)
+}
+
 pub async fn build_aptos_hackathon_mock_query_information_response(
 ) -> Result<HttpResponse, HTTPError> {
     let mock_response = AptosHackathonQueryInformationResponse {
