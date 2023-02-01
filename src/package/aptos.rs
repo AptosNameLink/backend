@@ -2,16 +2,39 @@ use aptos_sdk::crypto::ed25519::{Ed25519PublicKey, Ed25519Signature};
 use aptos_sdk::crypto::{Signature, ValidCryptoMaterialStringExt};
 use aptos_sdk::types::transaction::TransactionArgument::Address;
 use ed25519_dalek::Signature as DalekSignature;
+use std::str::FromStr;
 
 pub fn verify_signature_by_public_key_ethereum(
     ethereum_signature: &str,
     ethereum_address: &str,
 ) -> bool {
-    // panic!("Not implemented yet")
-    true
+    let converted_signature = match ethers::types::Signature::from_str(ethereum_signature) {
+        Ok(signature) => signature,
+        Err(e) =>  {
+            println!("Signature Error: {:?}", e);
+            return false
+        },
+    };
+
+    let ethereum_address = match ethers::types::Address::from_str(ethereum_address) {
+        Ok(address) => address,
+        Err(e) => {
+            println!("Address Error: {:?}", e);
+            return false;
+        }
+    };
+
+    match converted_signature.verify("aptosgazua", ethereum_address) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
 
-pub fn verify_signature_by_public_key_aptos(message: &str, aptos_signature: &str, aptos_public_key: &str) -> bool {
+pub fn verify_signature_by_public_key_aptos(
+    message: &str,
+    aptos_signature: &str,
+    aptos_public_key: &str,
+) -> bool {
     let signature = Ed25519Signature::from_encoded_string(aptos_signature).unwrap();
     let pubkey = Ed25519PublicKey::from_encoded_string(aptos_public_key).unwrap();
     let result = signature.verify_arbitrary_msg(message.as_ref(), &pubkey);
@@ -24,7 +47,9 @@ pub async fn upload_ipfs(data: String) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use crate::package::aptos::tests::AccountSignature::Ed25519Signature;
+    use crate::package::aptos::verify_signature_by_public_key_ethereum;
     use aptos_sdk::crypto::ed25519::Ed25519Signature as Ed25519SignatureTuple;
     use aptos_sdk::crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
     use aptos_sdk::crypto::{
@@ -36,8 +61,11 @@ mod tests {
     use cosmos_sdk_proto::traits::MessageExt;
     use ed25519_dalek::Keypair as DalekKeyPair;
     use ed25519_dalek::{PublicKey, Signature as DalekSignature, Signer, Verifier};
+    use ethers::signers::{LocalWallet, Signer as LocalSigner};
+    use ethers::types::SignatureError;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use std::str::FromStr;
 
     #[test]
     fn sign_message_by_aptos_public_key() {
@@ -107,9 +135,37 @@ mod tests {
         let pubkey = pubkey_str.clone();
 
         // When
-        let result = super::verify_signature_by_public_key_aptos(&signature, &pubkey);
+        let result =
+            super::verify_signature_by_public_key_aptos(message_original, &signature, &pubkey);
 
         // Then
         assert!(result, "Expected the signature to be valid");
+    }
+
+    // reference: https://docs.rs/ethers-signers/0.5.4/ethers_signers/index.html
+    #[actix_web::test]
+    async fn test_verify_signature_by_public_key_ethereum() {
+        // given
+        // get private key from environment variable
+        let private_key_env = env::var("PRIVATE_KEY_ETHEREUM").expect("PRIVATE_KEY_ETHEREUM must be set");
+        let wallet = private_key_env
+            .parse::<LocalWallet>()
+            .unwrap();
+        let signature = wallet.sign_message("aptosgazua").await.unwrap();
+
+        // when
+        let signature_str = signature.to_string();
+        println!("signature: {:?}", signature_str);
+        println!("wallet address: {:?}", wallet.address());
+        let converted_signature = ethers::types::Signature::from_str(&signature_str).unwrap();
+
+        // then
+        assert!(converted_signature
+            .verify("aptosgazua", wallet.address())
+            .is_ok());
+        assert!(verify_signature_by_public_key_ethereum(
+            &signature_str,
+            "0x01725BE700413D34bCC5e961de1d0C777d3A52F4"
+        ));
     }
 }

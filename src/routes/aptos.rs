@@ -25,7 +25,7 @@ pub struct ChainType {
 
 #[derive(Deserialize)]
 pub struct SignatureInfo {
-    ethereum_public_key: String,
+    ethereum_public_key: String, // optional
     ethereum_address: String,
     aptos_public_key: String,
     aptos_address: String,
@@ -52,19 +52,22 @@ pub async fn verify_signatures(
 
     let signature_info = &signature_data.into_inner();
     let ethereum_public_key = &signature_info.ethereum_public_key;
+    // 0x01725BE700413D34bCC5e961de1d0C777d3A52F4
     let ethereum_address = &signature_info.ethereum_address;
     // e.g. "0x917e745db1b1edc9ce62a8ed62b1cfcf261b4a5a21d58b167874e6cf6fa68aa3"
     let aptos_public_key = &signature_info.aptos_public_key;
     // e.g. "0x470196fa19f82ece3bfe1f4658c12098f752c5ae01a43a4f57cb46fbf05c1011"
     let aptos_address = &signature_info.aptos_address;
     let message = &signature_info.message;
+    // 71bcbc3edb59e4182c7d8dddf38df23d5220194fbe0e6f4577d4137c91c678a00825785fee253b93944c05202e339109e295cc523818995e5307813a8282e3cc1b
     let ethereum_signature = &signature_info.ethereum_signature;
     // e.g. "2b5f492d76c0c5a7c65eb8832168e14a506386f5a2cf1ad90ae12a121ad4a0ab8c04c4872e841239b608f2ec2fc01244221b3610c41eb0bdd974632320eef207"
     let aptos_signature = &signature_info.aptos_signature;
 
     let ethereum_result =
-        verify_signature_by_public_key_ethereum(ethereum_signature, ethereum_public_key);
-    let aptos_result = verify_signature_by_public_key_aptos(message, aptos_signature, aptos_public_key);
+        verify_signature_by_public_key_ethereum(ethereum_signature, ethereum_address);
+    let aptos_result =
+        verify_signature_by_public_key_aptos(message, aptos_signature, aptos_public_key);
 
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
