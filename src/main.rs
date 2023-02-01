@@ -1,5 +1,6 @@
 use actix_web::web::Data;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
+use gluesql::prelude::*;
 
 mod client;
 mod http;
@@ -22,6 +23,14 @@ async fn index(req: HttpRequest) -> &'static str {
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
+
+    let storage = MemoryStorage::default();
+    let mut glue = Glue::new(storage);
+
+    // load info.sql
+    let sql = std::fs::read_to_string("info.sql").unwrap();
+    let result = glue.execute(sql);
+    println!("result: {:?}", result);
 
     HttpServer::new(|| {
         let health_controller = web::scope("/health")

@@ -12,6 +12,7 @@ use serde_json::from_str;
 use std::io::Cursor;
 use std::str::FromStr;
 use std::{env, future};
+use crate::routes::aptos::SignatureInfo;
 // use ipfs_api_backend_actix::{IpfsApi, IpfsClient, TryFromUri};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -60,6 +61,13 @@ pub fn verify_signature_by_public_key_aptos(
     let pubkey = Ed25519PublicKey::from_encoded_string(aptos_public_key).unwrap();
     let result = signature.verify_arbitrary_msg(message.as_ref(), &pubkey);
     result.is_ok()
+}
+
+pub fn store_database(
+    signature_info: &SignatureInfo,
+) -> bool {
+    // TODO: Store database
+    true
 }
 
 pub async fn upload_ipfs(data: String) -> Result<String, String> {

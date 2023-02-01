@@ -6,9 +6,7 @@ use crate::http::response::{
     build_aptos_hackathon_mock_verification_response, AptosHackathonRandomResponse,
     AptosHackathonVerificationResponse, HealthResponse,
 };
-use crate::package::aptos::{
-    upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum,
-};
+use crate::package::aptos::{store_database, upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use ibc_proto::cosmos::bank::v1beta1::{
@@ -72,6 +70,8 @@ pub async fn verify_signatures(
 
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
+        let database_response = store_database(signature_info).await;
+
         let serialized_data = serde_json::to_string(&signature_info).unwrap();
         let ipfs_response = upload_ipfs(serialized_data).await;
         match ipfs_response {
