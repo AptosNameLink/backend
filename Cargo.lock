@@ -79,6 +79,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-multipart"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5011f5be460e35a5b82e1745c0ea0c6293e8f8d38bbaa1f0455afcff5b454ad6"
+dependencies = [
+ "actix-utils",
+ "actix-web",
+ "bytes",
+ "derive_more",
+ "futures-core",
+ "httparse",
+ "local-waker",
+ "log",
+ "memchr",
+ "mime",
+]
+
+[[package]]
 name = "actix-multipart-rfc7578"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -156,7 +174,9 @@ dependencies = [
  "futures-core",
  "http",
  "log",
+ "openssl",
  "pin-project-lite",
+ "tokio-openssl",
  "tokio-util",
 ]
 
@@ -1127,6 +1147,7 @@ dependencies = [
  "itoa",
  "log",
  "mime",
+ "openssl",
  "percent-encoding",
  "pin-project-lite",
  "rand 0.8.5",
@@ -5257,8 +5278,10 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 name = "parachutedrop-rust-server"
 version = "0.0.1"
 dependencies = [
+ "actix-multipart",
  "actix-web",
  "aptos-sdk",
+ "awc",
  "base64 0.21.0",
  "cosmos-sdk-proto",
  "ecdsa",
@@ -5266,10 +5289,12 @@ dependencies = [
  "ed25519-dalek",
  "env_logger",
  "ethers",
+ "futures",
  "hex",
  "ibc-proto",
  "ipfs-api-backend-actix",
  "json",
+ "openssl",
  "prost",
  "protobuf 3.2.0",
  "protobuf-codegen-pure",
@@ -6431,6 +6456,7 @@ dependencies = [
  "js-sys",
  "log",
  "mime",
+ "mime_guess",
  "native-tls",
  "once_cell",
  "percent-encoding",
@@ -7619,6 +7645,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7d995660bd2b7f8c1568414c1126076c13fbb725c40112dc0120b78eb9b717b"
 dependencies = [
  "native-tls",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-openssl"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c08f9ffb7809f1b20c1b398d92acf4cc719874b3b2b2d9ea2f09b4a80350878a"
+dependencies = [
+ "futures-util",
+ "openssl",
+ "openssl-sys",
  "tokio",
 ]
 
