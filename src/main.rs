@@ -1,6 +1,8 @@
+use std::sync::Arc;
 use actix_web::web::Data;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use gluesql::prelude::*;
+use std::sync::Mutex;
 
 mod client;
 mod http;
@@ -19,20 +21,28 @@ async fn index(req: HttpRequest) -> &'static str {
     "James Web3!"
 }
 
+pub struct AppState {
+    glue: Arc<Mutex<Glue<MemoryStorage>>>,
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let storage = MemoryStorage::default();
-    let mut glue = Glue::new(storage);
+    let glue = Arc::new(Mutex::new(Glue::new(storage)));
+    let app_state = web::Data::new(AppState { glue: glue.clone() });
 
     // load info.sql
     let sql = std::fs::read_to_string("info.sql").unwrap();
-    let result = glue.execute(sql);
+    let result = {
+        let mut glue = glue.lock().unwrap();
+        &glue.execute(sql)
+    };
     println!("result: {:?}", result);
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         let health_controller = web::scope("/health")
             .app_data(Data::new(reqwest::Client::new()))
             .service(osmosis_health)
@@ -44,6 +54,7 @@ async fn main() -> std::io::Result<()> {
             .service(track_messages);
         let hackathon_controller = web::scope("/aptos")
             .app_data(Data::new(reqwest::Client::new()))
+            .app_data(app_state.clone())
             .service(verify_signatures)
             .service(query_signatures)
             .service(aptos_random_value);

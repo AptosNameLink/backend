@@ -16,6 +16,7 @@ use ibc_proto::ibc::core::channel::v1::acknowledgement::Response::Error;
 use reqwest::{Client, Response, Version};
 use serde::{Deserialize, Serialize};
 use tonic::codegen::Body;
+use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct ChainType {
@@ -24,13 +25,13 @@ pub struct ChainType {
 
 #[derive(Serialize, Deserialize)]
 pub struct SignatureInfo {
-    ethereum_public_key: String, // optional
-    ethereum_address: String,
-    aptos_public_key: String,
-    aptos_address: String,
-    message: String,
-    ethereum_signature: String,
-    aptos_signature: String,
+    pub(crate) ethereum_public_key: String, // optional
+    pub(crate) ethereum_address: String,
+    pub(crate) aptos_public_key: String,
+    pub(crate) aptos_address: String,
+    pub(crate) message: String,
+    pub(crate) ethereum_signature: String,
+    pub(crate) aptos_signature: String,
 }
 
 #[get("/random")]
@@ -43,6 +44,7 @@ pub async fn aptos_random_value() -> Result<HttpResponse, HTTPError> {
 
 #[post("/signature")]
 pub async fn verify_signatures(
+    data: web::Data<AppState>,
     info: web::Query<ChainType>,
     signature_data: web::Json<SignatureInfo>,
 ) -> Result<HttpResponse, HTTPError> {
@@ -70,7 +72,7 @@ pub async fn verify_signatures(
 
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
-        let database_response = store_database(signature_info).await;
+        let database_response = store_database(data, signature_info);
 
         let serialized_data = serde_json::to_string(&signature_info).unwrap();
         let ipfs_response = upload_ipfs(serialized_data).await;
@@ -93,6 +95,8 @@ pub async fn verify_signatures(
         }
     } else {
         println!("One of the signatures is invalid");
+        let database_response = store_database(data, signature_info);
+        println!("database_response: {:?}", database_response);
         let response = AptosHackathonVerificationResponse {
             status: "failed".to_string(),
             ipfs_hash: "".to_string(),

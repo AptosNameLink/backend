@@ -19,8 +19,6 @@ futures = "0.3.17"
 reqwest = { version = "0.11.13", features = ["json", "native-tls-alpn", "multipart"] }
 tonic = "0.8.3"
 prost = "0.11.5"
-#pbjson = "0.5.1"
-#pbjson-types = "0.5.1"
 json = "*"
 
 tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread", "full"] }
@@ -37,7 +35,6 @@ rand_chacha = "0.3.1"
 rand = "0.7.3"
 ed25519-dalek = "1.0.1"
 ring = "0.16.20"
-ipfs-api-backend-actix = "0.7"
 hex = "0.4.3"
 ethers = "0.13.0"
 actix-multipart = "0.5.0"
@@ -45,6 +42,14 @@ gluesql = "0.13.1"
 
 [build-dependencies]
 tonic-build = "0.8.4"
+
+[dependencies.uuid]
+version = "1.3.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
 
 [dependencies.x25519-dalek]
 version = "1.2.0"
