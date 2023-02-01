@@ -3,10 +3,11 @@ use crate::http::method::HTTPRequestMethod;
 use crate::http::response;
 use crate::http::response::{
     build_aptos_hackathon_mock_query_information_response,
-    build_aptos_hackathon_mock_verification_response, AptosHackathonRandomResponse, HealthResponse,
+    build_aptos_hackathon_mock_verification_response, AptosHackathonRandomResponse,
+    AptosHackathonVerificationResponse, HealthResponse,
 };
 use crate::package::aptos::{
-    verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum,
+    upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum,
 };
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, HttpResponse, Responder};
@@ -15,7 +16,7 @@ use ibc_proto::cosmos::bank::v1beta1::{
 };
 use ibc_proto::ibc::core::channel::v1::acknowledgement::Response::Error;
 use reqwest::{Client, Response, Version};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tonic::codegen::Body;
 
 #[derive(Deserialize)]
@@ -23,7 +24,7 @@ pub struct ChainType {
     chain_name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct SignatureInfo {
     ethereum_public_key: String, // optional
     ethereum_address: String,
@@ -71,11 +72,33 @@ pub async fn verify_signatures(
 
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
+        let serialized_data = serde_json::to_string(&signature_info).unwrap();
+        let ipfs_response = upload_ipfs(serialized_data).await;
+        match ipfs_response {
+            Ok(response) => {
+                let response = AptosHackathonVerificationResponse {
+                    status: "success".to_string(),
+                    ipfs_hash: response,
+                };
+                Ok(HttpResponse::build(StatusCode::OK).json(response))
+            }
+            Err(e) => {
+                println!("ipfs_response: {:?}", e);
+                let response = AptosHackathonVerificationResponse {
+                    status: "failed".to_string(),
+                    ipfs_hash: "".to_string(),
+                };
+                Ok(HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR).json(response))
+            }
+        }
     } else {
         println!("One of the signatures is invalid");
+        let response = AptosHackathonVerificationResponse {
+            status: "failed".to_string(),
+            ipfs_hash: "".to_string(),
+        };
+        Ok(HttpResponse::build(StatusCode::BAD_REQUEST).json(response))
     }
-
-    build_aptos_hackathon_mock_verification_response().await
 }
 
 #[get("/signature")]

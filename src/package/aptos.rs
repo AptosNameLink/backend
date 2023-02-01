@@ -1,17 +1,17 @@
-use std::{env, future};
-use std::io::Cursor;
+use actix_multipart::Multipart;
+use actix_web::http;
+use actix_web::http::header::HeaderMap;
+use actix_web::http::Uri;
+use actix_web::web::Bytes;
 use aptos_sdk::crypto::ed25519::{Ed25519PublicKey, Ed25519Signature};
 use aptos_sdk::crypto::{Signature, ValidCryptoMaterialStringExt};
 use aptos_sdk::types::transaction::TransactionArgument::Address;
 use ed25519_dalek::Signature as DalekSignature;
-use std::str::FromStr;
-use actix_web::http::Uri;
 use serde::{Deserialize, Serialize};
-use actix_multipart::Multipart;
-use actix_web::http;
-use actix_web::web::Bytes;
-use actix_web::http::header::HeaderMap;
 use serde_json::from_str;
+use std::io::Cursor;
+use std::str::FromStr;
+use std::{env, future};
 // use ipfs_api_backend_actix::{IpfsApi, IpfsClient, TryFromUri};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -31,10 +31,10 @@ pub fn verify_signature_by_public_key_ethereum(
 ) -> bool {
     let converted_signature = match ethers::types::Signature::from_str(ethereum_signature) {
         Ok(signature) => signature,
-        Err(e) =>  {
+        Err(e) => {
             println!("Signature Error: {:?}", e);
-            return false
-        },
+            return false;
+        }
     };
 
     let ethereum_address = match ethers::types::Address::from_str(ethereum_address) {
@@ -64,17 +64,25 @@ pub fn verify_signature_by_public_key_aptos(
 
 pub async fn upload_ipfs(data: String) -> Result<String, String> {
     let IPFS_API_KEY = env::var("IPFS_API_KEY").expect("IPFS_API_KEY must be set");
-    let IPFS_API_KEY_SECRET = env::var("IPFS_API_KEY_SECRET").expect("IPFS_API_KEY_SECRET must be set");
+    let IPFS_API_KEY_SECRET =
+        env::var("IPFS_API_KEY_SECRET").expect("IPFS_API_KEY_SECRET must be set");
 
     let client = reqwest::Client::new();
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
         "Authorization",
-        format!("Basic {}", base64::encode(format!("{}:{}", IPFS_API_KEY, IPFS_API_KEY_SECRET))).parse().unwrap(),
+        format!(
+            "Basic {}",
+            base64::encode(format!("{}:{}", IPFS_API_KEY, IPFS_API_KEY_SECRET))
+        )
+        .parse()
+        .unwrap(),
     );
 
-    let form: reqwest::multipart::Form = reqwest::multipart::Form::new()
-        .part("file", reqwest::multipart::Part::bytes(data.as_bytes().to_vec()).file_name("ipfs_upload.json"));
+    let form: reqwest::multipart::Form = reqwest::multipart::Form::new().part(
+        "file",
+        reqwest::multipart::Part::bytes(data.as_bytes().to_vec()).file_name("ipfs_upload.json"),
+    );
 
     let mut response = client
         .post("https://ipfs.infura.io:5001/api/v0/add")
@@ -96,7 +104,6 @@ pub async fn upload_ipfs(data: String) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
     use crate::package::aptos::tests::AccountSignature::Ed25519Signature;
     use crate::package::aptos::{upload_ipfs, verify_signature_by_public_key_ethereum};
     use aptos_sdk::crypto::ed25519::Ed25519Signature as Ed25519SignatureTuple;
@@ -112,10 +119,11 @@ mod tests {
     use ed25519_dalek::{PublicKey, Signature as DalekSignature, Signer, Verifier};
     use ethers::signers::{LocalWallet, Signer as LocalSigner};
     use ethers::types::SignatureError;
+    use ipfs_api_backend_actix::{IpfsApi, IpfsClient};
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use std::env;
     use std::str::FromStr;
-    use ipfs_api_backend_actix::{IpfsApi, IpfsClient};
 
     #[test]
     fn sign_message_by_aptos_public_key() {
@@ -197,10 +205,9 @@ mod tests {
     async fn test_verify_signature_by_public_key_ethereum() {
         // given
         // get private key from environment variable
-        let private_key_env = env::var("PRIVATE_KEY_ETHEREUM").expect("PRIVATE_KEY_ETHEREUM must be set");
-        let wallet = private_key_env
-            .parse::<LocalWallet>()
-            .unwrap();
+        let private_key_env =
+            env::var("PRIVATE_KEY_ETHEREUM").expect("PRIVATE_KEY_ETHEREUM must be set");
+        let wallet = private_key_env.parse::<LocalWallet>().unwrap();
         let signature = wallet.sign_message("aptosgazua").await.unwrap();
 
         // when
