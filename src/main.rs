@@ -12,7 +12,7 @@ mod routes;
 #[macro_use]
 extern crate json;
 
-use crate::routes::aptos::{aptos_random_value, query_signatures, verify_signatures};
+use crate::routes::aptos::{aptos_random_value, query_signatures, SignatureInfoList, verify_signatures};
 use crate::routes::health::{evmos_health, osmosis_health, polygon_health};
 use crate::routes::query::{query_balance, track_messages};
 
@@ -23,6 +23,7 @@ async fn index(req: HttpRequest) -> &'static str {
 
 pub struct AppState {
     glue: Arc<Mutex<Glue<MemoryStorage>>>,
+    signature_info_list: Arc<Mutex<SignatureInfoList>>,
 }
 
 #[actix_web::main]
@@ -32,7 +33,7 @@ async fn main() -> std::io::Result<()> {
 
     let storage = MemoryStorage::default();
     let glue = Arc::new(Mutex::new(Glue::new(storage)));
-    let app_state = web::Data::new(AppState { glue: glue.clone() });
+    let app_state = web::Data::new(AppState { glue: glue.clone(), signature_info_list: Arc::new(Mutex::new(SignatureInfoList::new())) });
 
     // load info.sql
     let sql = std::fs::read_to_string("info.sql").unwrap();
