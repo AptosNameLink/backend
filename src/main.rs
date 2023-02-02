@@ -67,7 +67,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/index.html").to(|| async { "Hello world!" }))
             .service(web::resource("/").to(index))
     })
-    .bind(("0.0.0.0", 80))?
+    .bind(("0.0.0.0", 8082))?
     .run()
     .await
 }
