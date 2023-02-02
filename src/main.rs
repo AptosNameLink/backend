@@ -3,6 +3,7 @@ use actix_web::web::Data;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use gluesql::prelude::*;
 use std::sync::Mutex;
+use actix_cors::Cors;
 
 mod client;
 mod http;
@@ -59,8 +60,10 @@ async fn main() -> std::io::Result<()> {
             .service(verify_signatures)
             .service(query_signatures)
             .service(aptos_random_value);
+
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(Cors::permissive())
             .service(health_controller)
             .service(query_controller)
             .service(hackathon_controller)

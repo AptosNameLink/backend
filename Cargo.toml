@@ -39,6 +39,7 @@ hex = "0.4.3"
 ethers = "0.13.0"
 actix-multipart = "0.5.0"
 gluesql = "0.13.1"
+actix-cors = "0.6.4"
 
 [build-dependencies]
 tonic-build = "0.8.4"
