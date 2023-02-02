@@ -172,7 +172,6 @@ mod tests {
     use ed25519_dalek::{PublicKey, Signature as DalekSignature, Signer, Verifier};
     use ethers::signers::{LocalWallet, Signer as LocalSigner};
     use ethers::types::SignatureError;
-    use ipfs_api_backend_actix::{IpfsApi, IpfsClient};
     use rand::rngs::StdRng;
     use rand::SeedableRng;
     use std::env;
