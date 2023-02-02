@@ -40,7 +40,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
-        let cors = Cors::default().allow_any_origin().send_wildcard();
+        let cors = Cors::default().allow_any_origin().allow_any_method().allow_any_header().send_wildcard();
 
         let health_controller = web::scope("/health")
             .app_data(Data::new(reqwest::Client::new()))
