@@ -64,55 +64,55 @@ pub fn verify_signature_by_public_key_aptos(
     result.is_ok()
 }
 
-pub fn store_database(
-    data: web::Data<AppState>,
-    signature_info: &SignatureInfo,
-) -> bool {
-    let glue = &data.glue;
-    match glue.try_lock() {
-        Ok(mut glue) => {
-            // let row_counts_of_name_link_info = glue.execute("SELECT COUNT(*) FROM NAMELINK_INFO").unwrap();
-            // let rows_from_row_counts_of_name_link_info = row_counts_of_name_link_info.get(0).unwrap();
-            // // extract rows
-            // // Select {
-            // //         labels: Vec<String>,
-            // //         rows: Vec<Row>,
-            // //     },
-            // let row_count: _ = rows_from_row_counts_of_name_link_info.clone().try_into().unwrap();
-            // println!("row_count: {:?}", row_count);
-        }
-        Err(poison_error) => {
-            println!("Poison Error: {:?}", poison_error);
-            return false;
-        },
-    };
-    let mut glue = glue.lock().unwrap();
-
-    println!("glue found");
-
-    let sql = format!(
-        "INSERT INTO NAMELINK_INFO(id, ethereum_public_key, ethereum_address, aptos_public_key, aptos_address, message, ethereum_signature, aptos_signature) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')",
-        Uuid::new_v4(),
-        signature_info.ethereum_public_key,
-        signature_info.ethereum_address,
-        signature_info.aptos_public_key,
-        signature_info.aptos_address,
-        signature_info.message,
-        signature_info.ethereum_signature,
-        signature_info.aptos_signature,
-    );
-
-    println!("sql: {:?}", sql);
-
-    let response = glue.execute(&sql).unwrap();
-    println!("response: {:?}", response);
-
-    if response.is_empty() {
-        false
-    } else {
-        true
-    }
-}
+// pub fn store_database(
+//     data: web::Data<AppState>,
+//     signature_info: &SignatureInfo,
+// ) -> bool {
+//     let glue = &data.glue;
+//     match glue.try_lock() {
+//         Ok(mut glue) => {
+//             // let row_counts_of_name_link_info = glue.execute("SELECT COUNT(*) FROM NAMELINK_INFO").unwrap();
+//             // let rows_from_row_counts_of_name_link_info = row_counts_of_name_link_info.get(0).unwrap();
+//             // // extract rows
+//             // // Select {
+//             // //         labels: Vec<String>,
+//             // //         rows: Vec<Row>,
+//             // //     },
+//             // let row_count: _ = rows_from_row_counts_of_name_link_info.clone().try_into().unwrap();
+//             // println!("row_count: {:?}", row_count);
+//         }
+//         Err(poison_error) => {
+//             println!("Poison Error: {:?}", poison_error);
+//             return false;
+//         },
+//     };
+//     let mut glue = glue.lock().unwrap();
+//
+//     println!("glue found");
+//
+//     let sql = format!(
+//         "INSERT INTO NAMELINK_INFO(id, ethereum_public_key, ethereum_address, aptos_public_key, aptos_address, message, ethereum_signature, aptos_signature) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')",
+//         Uuid::new_v4(),
+//         signature_info.ethereum_public_key,
+//         signature_info.ethereum_address,
+//         signature_info.aptos_public_key,
+//         signature_info.aptos_address,
+//         signature_info.message,
+//         signature_info.ethereum_signature,
+//         signature_info.aptos_signature,
+//     );
+//
+//     println!("sql: {:?}", sql);
+//
+//     let response = glue.execute(&sql).unwrap();
+//     println!("response: {:?}", response);
+//
+//     if response.is_empty() {
+//         false
+//     } else {
+//         true
+//     }
+// }
 
 
 pub async fn upload_ipfs(data: String) -> Result<String, String> {

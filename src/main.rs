@@ -23,8 +23,8 @@ async fn index(req: HttpRequest) -> &'static str {
 }
 
 pub struct AppState {
-    glue: Arc<Mutex<Glue<MemoryStorage>>>,
-    signature_info_list: Arc<Mutex<SignatureInfoList>>,
+    // glue: Arc<Mutex<Glue<MemoryStorage>>>,
+    signature_info_list: SignatureInfoList,
 }
 
 #[actix_web::main]
@@ -34,17 +34,14 @@ async fn main() -> std::io::Result<()> {
 
     let storage = MemoryStorage::default();
     let glue = Arc::new(Mutex::new(Glue::new(storage)));
-    let app_state = web::Data::new(AppState { glue: glue.clone(), signature_info_list: Arc::new(Mutex::new(SignatureInfoList::new())) });
-
-    // load info.sql
-    let sql = std::fs::read_to_string("info.sql").unwrap();
-    let result = {
-        let mut glue = glue.lock().unwrap();
-        &glue.execute(sql)
-    };
-    println!("result: {:?}", result);
+    let app_state = web::Data::new(AppState {
+        // glue: glue.clone(),
+        signature_info_list: SignatureInfoList::new(),
+    });
 
     HttpServer::new(move || {
+        let cors = Cors::default().allow_any_origin().send_wildcard();
+
         let health_controller = web::scope("/health")
             .app_data(Data::new(reqwest::Client::new()))
             .service(osmosis_health)
@@ -63,14 +60,14 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(middleware::Logger::default())
-            .wrap(Cors::permissive())
+            .wrap(cors)
             .service(health_controller)
             .service(query_controller)
             .service(hackathon_controller)
             .service(web::resource("/index.html").to(|| async { "Hello world!" }))
             .service(web::resource("/").to(index))
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", 80))?
     .run()
     .await
 }

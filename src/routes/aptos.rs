@@ -6,7 +6,7 @@ use crate::http::response::{
     build_aptos_hackathon_mock_verification_response, AptosHackathonRandomResponse,
     AptosHackathonVerificationResponse, HealthResponse,
 };
-use crate::package::aptos::{store_database, upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum};
+use crate::package::aptos::{upload_ipfs, verify_signature_by_public_key_aptos, verify_signature_by_public_key_ethereum};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use actix_web::cookie::time::macros::time;
@@ -107,7 +107,7 @@ pub async fn verify_signatures(
         verify_signature_by_public_key_ethereum(ethereum_signature, ethereum_address);
     let aptos_result =
         verify_signature_by_public_key_aptos(message, aptos_signature, aptos_public_key);
-    let mut signature_info_list = data.signature_info_list.lock().unwrap();
+    let mut signature_info_list = data.signature_info_list.list.clone();
     if ethereum_result == true && aptos_result == true {
         println!("Both signatures are valid");
         // let database_response = store_database(data, signature_info);
@@ -130,7 +130,8 @@ pub async fn verify_signatures(
                 .as_secs()
                 .to_string(),
         };
-        signature_info_list.add(signature_saved_info.clone());
+        signature_info_list.push(signature_saved_info.clone());
+        // signature_info_list.add(signature_saved_info.clone());
         Ok(HttpResponse::Ok().json(signature_saved_info))
     } else {
         println!("One of the signatures is invalid");
@@ -150,7 +151,8 @@ pub async fn verify_signatures(
                 .as_secs()
                 .to_string(),
         };
-        signature_info_list.add(signature_saved_info.clone());
+        signature_info_list.push(signature_saved_info.clone());
+        // signature_info_list.add(signature_saved_info.clone());
         // let database_response = store_database(data, signature_info);
         // println!("database_response: {:?}", database_response);
         let response = AptosHackathonVerificationResponse {
@@ -183,8 +185,8 @@ pub async fn query_signatures(data: web::Data<AppState>, info: web::Query<ChainT
     println!("target_chain: {}", chain);
     println!("target_address: {}", aptos_address);
     // find_element_by_aptos_signature
-    let signature_info_list = data.signature_info_list.lock().unwrap();
-    let response = signature_info_list.list.clone();
+    let signature_info_list = &data.signature_info_list;
+    let response = signature_info_list.clone();
     // find by find_element_by_aptos_signature
     let response = signature_info_list.find_element_by_aptos_address(aptos_address);
     // if response is None, return failed
