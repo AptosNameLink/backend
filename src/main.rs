@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::web::Data;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 
@@ -40,6 +41,7 @@ async fn main() -> std::io::Result<()> {
             .service(aptos_random_value);
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(Cors::permissive())
             .service(health_controller)
             .service(query_controller)
             .service(hackathon_controller)
